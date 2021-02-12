@@ -1,0 +1,12 @@
+<?php 
+  $var = 1; 
+  $var = 1.2;
+  $var = 11.1234;
+  $var = 123.1234123e-12;
+  if (!(12 + 3 > 12) && $var == 12 || $var == 12) {
+    echo $var . "is greater than " . 12;
+  } else {
+    echo $var . "is not greater than " . 12;
+  }
+
+?>
