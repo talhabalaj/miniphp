@@ -11,8 +11,9 @@
 
   int yylex();
   void yyerror(const char*);
-  void webserver() {
+  char* webserver() {
     printf("Content-Type: text/html\n\n");
+    return 0;
   }
 %}
 
@@ -45,8 +46,8 @@ GE EE NE
 %left '(' ')'
 %left '!'
 
-%type<dtype> Expr
-%type<string> PrntAble StrExpr
+%type<dtype> Expr 
+%type<string> PrntAble StrExpr FuncC
 %type<boolean> BoolExpr
 
 %%
@@ -62,6 +63,7 @@ Stmt    : IfS
         | WhileS
         | ForS
         | Expr ';'
+        | FuncC ';'
         | FuncS
         | ECHO_S PrntAble ';' { printf("%s", $2); }
         ;
@@ -118,6 +120,16 @@ AssignS : IDENTIFIER '=' Expr  {
                 }
         }
         | IDENTIFIER '=' STRING {
+                struct symbol_table_rec* node = search_symbol(symbol_table_head, $1);
+                if (!node) {
+                        node = create($1, STRING_VALUE, (void*)$3);
+                        insert_to_symbol_table(&symbol_table_head,  node);
+                } else {
+                        node->type = STRING_VALUE;
+                        node->data.stringVal = $3;
+                }
+        } 
+        | IDENTIFIER '=' FuncC {
                 struct symbol_table_rec* node = search_symbol(symbol_table_head, $1);
                 if (!node) {
                         node = create($1, STRING_VALUE, (void*)$3);
@@ -190,7 +202,6 @@ Expr    : Expr '+' Expr  { $$ = $1 + $3; }
         | '(' Expr ')'   { $$ = $2; }
         | '+' Expr       { $$ = $2; }
         | '-' Expr       { $$ = -1 * $2;}
-        | FuncC         
         | IDENTIFIER     {
                 struct symbol_table_rec* node = search_symbol(symbol_table_head, $1);
                 if (node) {
@@ -212,7 +223,7 @@ Expr    : Expr '+' Expr  { $$ = $1 + $3; }
 FuncC   : IDENTIFIER_NAME '(' Id_seq ')'  {
           struct symbol_table_rec* node = search_symbol(symbol_table_head, $1);
           if (node) {
-            node->data.fun();
+            $$ = node->data.fun();
           } else {
             yyerror("function not defined");
           }
@@ -230,4 +241,6 @@ void yyerror(const char* message) {
 
 void init_c_function_interop() {
   insert_to_symbol_table(&symbol_table_head, create("webserver", FUNCTION_VALUE, (void*)webserver));
+  insert_to_symbol_table(&symbol_table_head, create("read", FUNCTION_VALUE, (void*)read_string));
+  insert_to_symbol_table(&symbol_table_head, create("get_query_string", FUNCTION_VALUE, (void*)get_query_string ));
 }

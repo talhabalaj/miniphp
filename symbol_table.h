@@ -18,7 +18,7 @@ struct symbol_table_rec {
     char* stringVal;
     int boolVal;
     int intVal;
-    void (*fun)();
+    char* (*fun)();
   } data;
   struct symbol_table_rec* next;
 };
@@ -37,7 +37,7 @@ struct symbol_table_rec *create(const char *name, int symbol_data_type,
   else if (symbol_data_type == STRING_VALUE)
     rec->data.stringVal = (char*)value;
   else if (symbol_data_type == FUNCTION_VALUE)
-    rec->data.fun = (void (*)())value;
+    rec->data.fun = (char* (*)())value;
   else if (symbol_data_type == BOOL_VALUE)
     rec->data.boolVal = *(int*)value;
   else if (symbol_data_type == INT_VALUE)

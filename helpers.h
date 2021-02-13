@@ -24,3 +24,15 @@ char *float_to_string(int value) {
   sprintf(str, "%#f", value);
   return str;
 }
+
+char* read_string() {
+  size_t bufsize = 100;
+  char* buffer = (char *)malloc(bufsize * sizeof(char));
+  size_t characters = getline(&buffer, &bufsize, stdin);
+  buffer = realloc(buffer, characters);
+  return buffer;
+}
+
+char* get_query_string() {
+  return strdup(getenv("QUERY_STRING"));
+}
