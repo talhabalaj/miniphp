@@ -1,13 +1,15 @@
 <?php  
   // this is comment
-  $id = 12.512341234;
-  echo $id . "\n";
-  $id = 13;
-  echo $id;
-  $id = false || true;
-  echo $id;
-  $id = 2 + 2 > 3 && 2 + 2 != 0;
-  echo $id;
-  $id = 2*2;
-  echo $id;
+  echo "<html>";
+  $id1 = 12.512341234;
+  echo $id1 . "\n";
+  $id2 = 13;
+  echo $id2 . "\n";
+  $id3 = false || true;
+  echo $id3 . "\n";
+  $id3 = 2 + 2 > 3 && 2 + 2 != 0;
+  echo $id3 . "\n";
+  $id4 = 2*2;
+  echo $id4 . "\n";
+  echo "</html>";
 ?>

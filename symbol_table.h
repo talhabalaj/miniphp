@@ -7,6 +7,8 @@
 #define INT_VALUE 3
 #define BOOL_VALUE 4
 
+FILE *identifier_file;
+
 struct symbol_table_rec {
   const char* name;
   int type;
@@ -23,6 +25,9 @@ struct symbol_table_rec {
 
 struct symbol_table_rec *create(const char *name, int symbol_data_type,
                                void *value) {
+  if (!identifier_file)
+    identifier_file = fopen("identifiers.txt", "w+");
+
   struct symbol_table_rec *rec =
       (struct symbol_table_rec *)malloc(sizeof(struct symbol_table_rec));
   rec->name = name;
@@ -38,6 +43,9 @@ struct symbol_table_rec *create(const char *name, int symbol_data_type,
   else if (symbol_data_type == INT_VALUE)
     rec->data.intVal = *(int *)value;
   rec->next = 0;
+  if (identifier_file) {
+    fprintf(identifier_file, "%s\n", name);
+  }
   return rec;
 }
 
