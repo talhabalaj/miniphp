@@ -4,29 +4,31 @@
   #include <stdlib.h>
   #include <ctype.h>
   #include "symbol_table.h"
+  #include "helpers.h"
 
   struct symbol_table_rec* symbol_table_head;
+  void init_c_function_interop();
 
   int yylex();
   void yyerror(const char*);
-  void fun() {
-    printf("HELLO");
+  void webserver() {
+    printf("Content-Type: text/html\n\n");
   }
 %}
 
 %define parse.trace
 
 %union {
-  double dtype;
+  long double dtype;
   int boolean;
   int itype;
   char* string;
 }
 
-%token <string> STRING 
-%token <string> IDENTIFIER 
+%token <string> STRING
+%token <string> IDENTIFIER
 %token <string> IDENTIFIER_NAME
-%token <dtype> FLOAT 
+%token <dtype> FLOAT
 %token <itype> INTEGER
 %token <boolean> TRUE FALSE
 %token <string> OTHER
@@ -43,8 +45,6 @@ GE EE NE
 %left '(' ')'
 %left '!'
 
-
-
 %type<dtype> Expr
 %type<string> PrntAble StrExpr
 %type<boolean> BoolExpr
@@ -52,7 +52,7 @@ GE EE NE
 %%
 Program : PHPSTART StmtList PHPEND Program
         | OTHER Program  { printf("%s", $1); }
-        | 
+        |
         ;
 StmtList: Stmt StmtList
         |
@@ -61,17 +61,13 @@ Stmt    : IfS
         | AssignS ';'
         | WhileS
         | ForS
-        | Expr ';' 
+        | Expr ';'
         | FuncS
         | ECHO_S PrntAble ';' { printf("%s", $2); }
         ;
 PrntAble: STRING { $$ = $1; }
-        | BoolExpr {  
-                char str[6] = "false";
-                if ($1) {
-                        strcpy(str, "true");
-                }
-                $$ = str;
+        | BoolExpr {
+                $$ = boolean_to_string($1);
         }
         | StrExpr {
                 $$ = $1;
@@ -83,7 +79,7 @@ PrntAble: STRING { $$ = $1; }
 Block   : '{' StmtList '}'
         | Stmt ';'
         ;
-AssignS : IDENTIFIER '=' Expr  { 
+AssignS : IDENTIFIER '=' Expr  {
                 struct symbol_table_rec* node = search_symbol(symbol_table_head, $1);
                 if (!node) {
                         void* data;
@@ -100,16 +96,16 @@ AssignS : IDENTIFIER '=' Expr  {
                         node = create($1, type, data);
                         insert_to_symbol_table(&symbol_table_head,  node);
                 } else {
-                        if ($3 - (int)$3 == 0) {     
+                        if ($3 - (int)$3 == 0) {
                                 node->type = INT_VALUE;
                                 node->data.intVal = $3;
-                        } else {  
+                        } else {
                                 node->type = FLOAT_VALUE;
                                 node->data.floatVal = $3;
                         }
                 }
-        }  
-        | IDENTIFIER '=' BoolExpr  { 
+        }
+        | IDENTIFIER '=' BoolExpr  {
                 struct symbol_table_rec* node = search_symbol(symbol_table_head, $1);
                 if (!node) {
                         int* data = (int*)malloc(sizeof(int));
@@ -121,7 +117,7 @@ AssignS : IDENTIFIER '=' Expr  {
                         node->data.boolVal = $3;
                 }
         }
-        | IDENTIFIER '=' STRING { 
+        | IDENTIFIER '=' STRING {
                 struct symbol_table_rec* node = search_symbol(symbol_table_head, $1);
                 if (!node) {
                         node = create($1, STRING_VALUE, (void*)$3);
@@ -136,14 +132,14 @@ FuncS   : FUNCTION IDENTIFIER_NAME '(' Id_seq ')' Block
         ;
 IfS     : IfSCom ElseS
         ;
-ElseS   : ELSE Block 
+ElseS   : ELSE Block
         | ELSEIF '(' BoolExpr ')' Block ElseS
         |
         ;
-IfSCom  : IF '(' BoolExpr ')' Block ; 
-WhileS  : WHILE '(' BoolExpr ')' Block 
+IfSCom  : IF '(' BoolExpr ')' Block ;
+WhileS  : WHILE '(' BoolExpr ')' Block
         ;
-ForS    : FOR '(' Expr ';' BoolExpr ';' Expr ')' Block 
+ForS    : FOR '(' Expr ';' BoolExpr ';' Expr ')' Block
         ;
 BoolExpr: Expr '<' Expr   { $$ = $1 < $3; }
         | Expr '>' Expr   { $$ = $1 > $3; }
@@ -155,7 +151,7 @@ BoolExpr: Expr '<' Expr   { $$ = $1 < $3; }
         | '(' BoolExpr ')' { $$ = $2; }
         | BoolExpr AND BoolExpr { $$ = $1 && $3; }
         | BoolExpr OR BoolExpr { $$ = $1 || $3; }
-        | TRUE 
+        | TRUE
         | FALSE
         ;
 StrExpr : IDENTIFIER {
@@ -166,30 +162,22 @@ StrExpr : IDENTIFIER {
                         } else if (node->type == FUNCTION_VALUE) {
                                 yyerror("WHAT IS THIS?");
                         } else if (node->type == FLOAT_VALUE) {
-                                char str[20];
-                                sprintf(str, "%f", node->data.floatVal);
-                                $$ = str;
+                                $$ = float_to_string(node->data.floatVal);
                         } else if (node->type == INT_VALUE) {
-                                char str[20];
-                                sprintf(str, "%d", node->data.intVal);
-                                $$ = str;
+                                $$ = int_to_string(node->data.intVal);
                         } else if (node->type == BOOL_VALUE) {
-                                char str[6] = "false";
-                                if (node->data.boolVal) {
-                                        strcpy(str, "true");
-                                }
-                                $$ = str;
+                                $$ = boolean_to_string(node->data.boolVal);
                         }
                 } else {
                         char null[5] = "null";
                         $$ = null;
                 }
-        } 
+        }
         | Expr {
                 char str[20];
                 if ($1 - (int)$1 == 0)
                         sprintf(str, "%d", $1);
-                else 
+                else
                         sprintf(str, "%f", $1);
                 $$ = str;
         }
@@ -202,7 +190,7 @@ Expr    : Expr '+' Expr  { $$ = $1 + $3; }
         | '(' Expr ')'   { $$ = $2; }
         | '+' Expr       { $$ = $2; }
         | '-' Expr       { $$ = -1 * $2;}
-        //| FuncC            
+        | FuncC         
         | IDENTIFIER     {
                 struct symbol_table_rec* node = search_symbol(symbol_table_head, $1);
                 if (node) {
@@ -221,14 +209,25 @@ Expr    : Expr '+' Expr  { $$ = $1 + $3; }
         | INTEGER  { $$ = (float)$<itype>1; }
         ;
 /* Function Call */
-FuncC   : IDENTIFIER_NAME '(' Id_seq ')'
+FuncC   : IDENTIFIER_NAME '(' Id_seq ')'  {
+          struct symbol_table_rec* node = search_symbol(symbol_table_head, $1);
+          if (node) {
+            node->data.fun();
+          } else {
+            yyerror("function not defined");
+          }
+        }
         ;
 Id_seq  : IDENTIFIER ',' Id_seq
         |
         ;
-%%  
+%%
+
 
 void yyerror(const char* message) {
   fprintf(stderr, "Error: %s,", message);
 }
 
+void init_c_function_interop() {
+  insert_to_symbol_table(&symbol_table_head, create("webserver", FUNCTION_VALUE, (void*)webserver));
+}

@@ -1,15 +1,14 @@
+#!/usr/bin/miniphp
 <?php  
+  webserver();
   // this is comment
+  $name = "Talha Balaj";
+  $title = "Test";
   echo "<html>";
-  $id1 = 12.512341234;
-  echo $id1 . "\n";
-  $id2 = 13;
-  echo $id2 . "\n";
-  $id3 = false || true;
-  echo $id3 . "\n";
-  $id3 = 2 + 2 > 3 && 2 + 2 != 0;
-  echo $id3 . "\n";
-  $id4 = 2*2;
-  echo $id4 . "\n";
+  echo "<head><title>HELLO</title></head>";
+  echo "<body>";
+  echo "<h1>" . $name . "</h1>";
+  echo "<h2>" . $title . "</h2>";
+  echo "</body>";
   echo "</html>";
 ?>

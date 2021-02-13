@@ -6,6 +6,7 @@
 
   char* process_string(char* ); 
   char* remove_dollar_prefix_from_string(char* ); 
+  extern char* init_c_function_interop();
 %}
 
 digit [0-9]
@@ -96,7 +97,7 @@ del [\n\t\r ]
 {float}    {yylval.dtype = atof(yytext); return FLOAT;}
 ({double_quote_string}|{single_quote_string}) {yylval.string = process_string(yytext); return STRING;}
 "$".{identifier_name} {yylval.string = remove_dollar_prefix_from_string(yytext); return IDENTIFIER;}
-{identifier_name}     {yylval.string = yytext; return IDENTIFIER_NAME;}
+{identifier_name}     {yylval.string = strdup(yytext); return IDENTIFIER_NAME;}
 "["|"]"|"("|")"|"{"|"}"|"."|"*"|"+"|"-"|"~"|"!"|"$"|"/"|"%"|"^"|"&"|"?"|":"|";"|"="|","|"<"|">" return yytext[0];
 "<=" return LE;
 ">=" return GE;
@@ -127,21 +128,21 @@ char* process_string(char* str) {
   int bufIndex = 0;
   for (int i = 0; i < len; i++) 
   {
-    if (new_str[i] == '\\') {
+    if (!bufIndex && new_str[i] == '\\') {
       buffer[bufIndex++] = new_str[i];
     }
 
     if (bufIndex > 0 && (new_str[i] == 'n' || new_str[i] == 't')) {
-      new_str[i] = new_str[i] == 'n' ? '\n' : '\t';
-      int j = i-1;
+      new_str[i-1] = new_str[i] == 'n' ? '\n' : '\t';
+      int j = i;
       while (new_str[j] != '\0') {
         new_str[j] = new_str[j+1];
         j++;
       }
       bufIndex = 0;
+      i--;
     }
-  }
-  
+  }    
   return new_str;
 }
 
@@ -152,12 +153,16 @@ int yywrap(void) {
 int main(int argc, const char* argv[]) {
   if (argc >= 2) {
     yyin = fopen(argv[1], "r");
+    if (!yyin) {
+      fprintf(stderr, "error: %s: no such file");
+      exit(-1); 
+    }
+  } else {
+    FILE* tmp = yyin;
+    yyin = fopen("input.txt", "r");
+    if (!yyin) yyin = tmp;
   }
 
-  /* if (yyin == NULL) {
-    fprintf(stderr, "error: %s: no such file");
-    exit(-1);
-  } */
-
+  init_c_function_interop();
   yyparse();
 }
