@@ -7,4 +7,9 @@
   while($var == 2.0){
    echo "this" . $var . " is";
   }
+  // single line
+  # single line
+  /* 
+    this is shit
+  */
 ?>

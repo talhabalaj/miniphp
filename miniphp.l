@@ -25,7 +25,7 @@ del [\n\t\r ]
 %%
 \n    {line_no++;}
 {del}
-({single_line_comment}|("/*"({letter}|{digit_s}|{del})"*/"))
+({single_line_comment}|(\/\*([\n\t]|[ ]|[0-9a-zA-Z])*\*\/))
 "<?php"   return PHPSTART;
 "?>"      return PHPEND;
 "abstract" return ABSTRACT;
