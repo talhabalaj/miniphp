@@ -1,15 +1,19 @@
 %{
   #include <stdlib.h>
   #include "miniphp.tab.h"
+  #include <string.h>
   int line_no = 0;
+
+  char* process_string(char* ); 
+  char* remove_dollar_prefix_from_string(char* ); 
 %}
 
 digit [0-9]
 digit_s {digit}+
 nonzero_digit [1-9]
 input_chars [^\n]
-integer [+|-]?{nonzero_digit}{digit}*
-float ({integer}|0)?"."{digit_s}([eE][+|-]?{digit_s})*
+integer [+|-]?({nonzero_digit}{digit}*|0)
+float {integer}?"."{digit_s}([eE][+|-]?{digit_s})*
 letter [A-Za-z]
 identifier_name ("_"|{letter})({digit}|{letter}|"_")*
 single_quote_string  \'[^\'\n]*\'
@@ -20,7 +24,7 @@ del [\n\t\r ]
 %%
 \n    {line_no++;}
 {del}
-({single_line_comment}|("/*")[^("*/")]*("*/"))
+({single_line_comment}|("/*"({letter}|{digit_s}|{del})"*/"))
 "<?php"   return PHPSTART;
 "?>"      return PHPEND;
 "abstract" return ABSTRACT;
@@ -86,11 +90,13 @@ del [\n\t\r ]
 "var" return VAR;
 "while" return WHILE;
 "xor" return XOR;
-{integer}  return INTEGER;
-{float}    return FLOAT;
-({double_quote_string}|{single_quote_string}) return STRING;
-"$".{identifier_name} return IDENTIFIER;
-{identifier_name}     return IDENTIFIER_NAME;
+"true"  {yylval.boolean = 1; return TRUE;}
+"false" {yylval.boolean = 0; return FALSE;}
+{integer}  {yylval.itype = atoi(yytext); return INTEGER;}
+{float}    {yylval.dtype = atof(yytext); return FLOAT;}
+({double_quote_string}|{single_quote_string}) {yylval.string = process_string(yytext); return STRING;}
+"$".{identifier_name} {yylval.string = remove_dollar_prefix_from_string(yytext); return IDENTIFIER;}
+{identifier_name}     {yylval.string = yytext; return IDENTIFIER_NAME;}
 "["|"]"|"("|")"|"{"|"}"|"."|"*"|"+"|"-"|"~"|"!"|"$"|"/"|"%"|"^"|"&"|"?"|":"|";"|"="|","|"<"|">" return yytext[0];
 "<=" return LE;
 ">=" return GE;
@@ -98,12 +104,60 @@ del [\n\t\r ]
 "!=" return NE;
 "&&" return AND;
 "||" return OR;
-.   {
-  fprintf(stderr, "Error: %s is not a valid token at %d", line_no);
-  exit(0);
+. {
+  fprintf(stderr, "Error: %s token is not valid", yytext);
+  exit(2);
 }
 %%
 
+
+char* remove_dollar_prefix_from_string(char* str) {
+  char* new_str = strdup(str);
+  ++new_str;
+  return new_str;
+}
+
+char* process_string(char* str) {
+  char* new_str = strdup(str);
+  ++new_str;
+  new_str[strlen(new_str) - 1] = 0;
+
+  int len = strlen(new_str);
+  char buffer[2] = "";
+  int bufIndex = 0;
+  for (int i = 0; i < len; i++) 
+  {
+    if (new_str[i] == '\\') {
+      buffer[bufIndex++] = new_str[i];
+    }
+
+    if (bufIndex > 0 && (new_str[i] == 'n' || new_str[i] == 't')) {
+      new_str[i] = new_str[i] == 'n' ? '\n' : '\t';
+      int j = i-1;
+      while (new_str[j] != '\0') {
+        new_str[j] = new_str[j+1];
+        j++;
+      }
+      bufIndex = 0;
+    }
+  }
+  
+  return new_str;
+}
+
 int yywrap(void) { 
   return 1;
+}
+
+int main(int argc, const char* argv[]) {
+  if (argc >= 2) {
+    yyin = fopen(argv[1], "r");
+  }
+
+  /* if (yyin == NULL) {
+    fprintf(stderr, "error: %s: no such file");
+    exit(-1);
+  } */
+
+  yyparse();
 }
