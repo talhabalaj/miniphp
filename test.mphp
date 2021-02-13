@@ -1,0 +1,10 @@
+<?php
+  $var = 10.0;
+  $var1 = "string";
+  if($var == 2.0) {
+    echo "okay\n";
+  }
+  while($var == 2.0){
+   echo "this" . $var . " is";
+  }
+?>
