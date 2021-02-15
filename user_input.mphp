@@ -1,0 +1,5 @@
+<?php 
+  echo "What is your name? ";
+  $name = read();
+  echo "Hi, " . $name;
+?>

@@ -1,5 +1,15 @@
 {
   "files.associations": {
-    "typeinfo": "cpp"
+    "typeinfo": "cpp",
+    "*.tcc": "cpp",
+    "list": "cpp",
+    "numeric": "cpp",
+    "optional": "cpp",
+    "ostream": "cpp",
+    "streambuf": "cpp",
+    "functional": "cpp",
+    "variant": "cpp",
+    "chrono": "cpp",
+    "string_view": "cpp"
   }
 }

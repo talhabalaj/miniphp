@@ -8,10 +8,28 @@
       "name": "(gdb) Launch",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/miniphp",
-      "args": ["input.mphp"],
+      "program": "${workspaceFolder}/a.out",
+      "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
+      "environment": [],
+      "MIMode": "gdb",
+      "setupCommands": [
+          {
+              "description": "Enable pretty-printing for gdb",
+              "text": "-enable-pretty-printing",
+              "ignoreFailures": true
+          }
+      ]
+    },
+    {
+      "name": "Project Debug",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/miniphp",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/src/",
       "environment": [],
       "MIMode": "gdb",
       "preLaunchTask": "Compile",
