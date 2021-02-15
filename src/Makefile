@@ -1,13 +1,19 @@
-all: 
-	bison -d miniphp.y -Wcounterexamples
+CXX = gcc
+CXXFLAGS = -Wall -Werror -Wextra -pedantic -g 
+LBLIBS = -lm
+
+SRC = miniphp.tab.c symbol_table.c helpers.c ast.c lex.yy.c  
+OBJ = $(SRC:.c=.o)
+EXEC = miniphp
+
+all: ly $(EXEC)
+
+ly: 
 	flex miniphp.l
-	gcc -g -o miniphp lex.yy.c miniphp.tab.c -lm
+	bison -d miniphp.y
+
+$(EXEC): $(OBJ)
+	$(CXX) $(LDFLAGS) -o $@ $(OBJ) $(LBLIBS)
 
 clean:
-	rm miniphp miniphp.tab* lex.yy.c 
-
-install:
-	cp miniphp /usr/bin/
-
-uninstall:
-	rm /usr/bin/miniphp
+	rm -rf $(OBJ) $(EXEC)

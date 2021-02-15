@@ -4,7 +4,6 @@
   #include <stdlib.h>
   #include <ctype.h>
   #include "ast.h"
-  #include "helpers.h"
 
   void init_c_function_interop();
 
@@ -42,28 +41,29 @@ GE EE NE
 %left '(' ')'
 %left '!'
 
-%type<tree> Expr PrntAble FuncC BoolExpr AssignS
+%type<tree> Expr PrntAble FuncC BoolExpr AssignS Stmt
 
 %%
 Program : PHPSTART StmtList PHPEND
         | OTHER Program  { printf("%s", $1); }
         ;
-StmtList: Stmt StmtList
+StmtList: Stmt StmtList { eval($1); }
         |
         ;
 Stmt    : IfS
         | AssignS ';'
         | WhileS
         | ForS
-        | Expr ';' { printf("%s", stringify(eval($1))); }
+        | Expr ';'
         | FuncC ';'
         | FuncS
-        | ECHO_S PrntAble ';' { printf("%s", ((struct d_string*)$2)->value); }
+        | ECHO_S PrntAble ';' { $$ = create_ast(S_ECHO, $2, NULL); }
         ;
 PrntAble: STRING { $$ = new_string($1); }
         | BoolExpr {
-                $$ = new_string($1);
+                $$ = $1;
         }
+        | Expr { $$ = $1; }
         | PrntAble '.' PrntAble {
                 char* str1 = ((struct d_string*)$1)->value;
                 char* str2 = ((struct d_string*)$1)->value;
@@ -79,7 +79,7 @@ Block   : '{' StmtList '}'
         ;
 AssignS : IDENTIFIER '=' Expr  { $$ = new_symbol($1, $3); }
         | IDENTIFIER '=' BoolExpr  { $$ = new_symbol($1, $3); }
-        | IDENTIFIER '=' STRING { $$ = new_symbol($1, $3); } 
+        | IDENTIFIER '=' STRING { $$ = new_symbol($1, new_string($3)); } 
         | IDENTIFIER '=' FuncC { $$ = new_symbol($1, $3); }
         ;
 FuncS   : FUNCTION IDENTIFIER_NAME '(' Id_seq ')' Block

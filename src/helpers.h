@@ -1,65 +1,17 @@
 #include "ast.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #ifndef HELPERS_H
 #define HELPERS_H
 
-char true_string[5] = "true";
-char null_string[5] = "null";
-char false_string[6] = "false";
+static char true_string[5] = "true";
+static char null_string[5] = "null";
+static char false_string[6] = "false";
 
-char *boolean_to_string(int boolean) {
-  if (boolean) {
-    return true_string;
-  } else {
-    return false_string;
-  }
-}
-
-char *int_to_string(int value) {
-  char *str = (char *)malloc(sizeof(char) * 25);
-  sprintf(str, "%d", value);
-  return str;
-}
-
-char *float_to_string(double value) {
-  char *str = (char *)malloc(sizeof(char) * 25);
-  sprintf(str, "%#f", value);
-  return str;
-}
-
-char *read_string() {
-  size_t bufsize = 100;
-  char *buffer = (char *)malloc(bufsize * sizeof(char));
-  size_t characters = getline(&buffer, &bufsize, stdin);
-  buffer = (char*)realloc(buffer, characters);
-  return buffer;
-}
-
-char *stringify(struct ast *tree) {
-  if (tree == NULL)
-    return null_string;
-
-  switch (tree->nodeType) {
-  case D_INTEGER:
-    return int_to_string(((struct d_integer *)tree)->value);
-  case D_DOUBLE:
-    return float_to_string(((struct d_double *)tree)->value);
-  case D_BOOL:
-    return boolean_to_string(((struct d_integer *)tree)->value);
-  default:
-    return null_string;
-  }
-}
-
-char *get_query_string() {
-  char *str = getenv("QUERY_STRING");
-  if (str != NULL)
-    return str;
-  else
-    return strdup("null");
-}
+char *boolean_to_string(int boolean);
+char *int_to_string(int value);
+char *float_to_string(double value);
+char *read_string();
+char *stringify(struct ast *tree);
+char *get_query_string();
 
 #endif
