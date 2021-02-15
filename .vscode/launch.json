@@ -8,10 +8,10 @@
       "name": "(gdb) Launch",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/a.out",
-      "args": [],
+      "program": "${workspaceFolder}/src/a.out",
+      "args": ["test.mphp"],
       "stopAtEntry": false,
-      "cwd": "${workspaceFolder}",
+      "cwd": "${workspaceFolder}/src",
       "environment": [],
       "MIMode": "gdb",
       "setupCommands": [

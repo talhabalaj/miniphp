@@ -10,6 +10,9 @@
     "functional": "cpp",
     "variant": "cpp",
     "chrono": "cpp",
-    "string_view": "cpp"
+    "string_view": "cpp",
+    "symbol_table.h": "c",
+    "ast.h": "c",
+    "helpers.h": "c"
   }
 }

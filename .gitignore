@@ -2,4 +2,5 @@
 lex.yy.c
 *.aout
 miniphp
+*.o
 identifiers.txt

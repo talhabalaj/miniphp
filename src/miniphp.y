@@ -3,7 +3,7 @@
   #include <string.h>
   #include <stdlib.h>
   #include <ctype.h>
-  #include "ast.h"
+  #include "symbol_table.h"
 
   void init_c_function_interop();
 

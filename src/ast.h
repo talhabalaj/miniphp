@@ -1,8 +1,6 @@
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "symbol_table.h"
+#include <math.h>
 
 #ifndef AST_H
 #define AST_H
@@ -31,45 +29,45 @@
 #define F_WHILE_STATMENT 51
 #define SYMBOL 60
 
-struct ast {
+struct ast
+{
   int nodeType;
   struct ast *left;
   struct ast *right;
 };
 
-struct d_integer {
+struct d_integer
+{
   int nodetype;
   int value;
 };
 
-struct d_bool {
+struct d_bool
+{
   int nodetype;
   short value;
 };
 
-struct d_double {
+struct d_double
+{
   int nodetype;
   double value;
 };
 
-struct d_string {
+struct d_string
+{
   int nodetype;
   char *value;
 };
 
-struct symbol {
-  int nodetype;
-  struct symbol_table_rec *rec;
-};
-
-struct flow {
+struct flow
+{
   int nodetype;
   struct ast *condition;
   struct ast *if_true;
   struct ast *if_false;
 };
 
-double perform_op(int optype, double a, double b);
 struct ast *op(int optype, struct ast *a, struct ast *b);
 struct ast *create_ast(int nodetype, struct ast *left, struct ast *right);
 struct ast *new_integer(int value);
@@ -80,7 +78,6 @@ struct ast *new_flow(int nodetype, struct ast *cond, struct ast *if_true, struct
 struct ast *get_symbol(const char *symbol_name);
 struct ast *new_symbol(const char *symbol_name, struct ast *value);
 struct ast *eval(struct ast *tree);
-struct ast *op(int optype, struct ast *a, struct ast *b);
 double perform_op(int optype, double a, double b);
 
 #endif

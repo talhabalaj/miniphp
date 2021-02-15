@@ -1,7 +1,8 @@
-#include "ast.h"
 
 #ifndef HELPERS_H
 #define HELPERS_H
+
+#include "ast.h"
 
 static char true_string[5] = "true";
 static char null_string[5] = "null";

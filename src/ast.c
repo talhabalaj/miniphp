@@ -1,6 +1,6 @@
 #include "ast.h"
-#include "helpers.h"
 #include "symbol_table.h"
+#include <string.h>
 
 struct ast *create_ast(int nodetype, struct ast *left, struct ast *right)
 {
@@ -59,14 +59,11 @@ struct ast *new_flow(int nodetype, struct ast *cond, struct ast *if_true,
 
 struct ast *get_symbol(const char *symbol_name)
 {
-  struct symbol_rec_table *symbol_rec = search_symbol(symbol_name);
+  struct symbol_rec_table *symbol_rec = search_symbol(symbol_table_head, symbol_name);
 
   if (symbol_rec)
   {
-    struct symbol *node = (struct symbol *)malloc(sizeof(struct symbol));
-    node->nodetype = SYMBOL;
-    node->rec = symbol_rec;
-    return (struct ast *)node;
+   // return symbol_rec->data;
   }
 
   return 0;
@@ -74,47 +71,32 @@ struct ast *get_symbol(const char *symbol_name)
 
 struct ast *new_symbol(const char *symbol_name, struct ast *value)
 {
-  struct symbol_rec_table *symbol_rec = search_symbol(symbol_name);
-  struct symbol *node = (struct symbol *)malloc(sizeof(struct symbol));
+  struct symbol_rec_table *symbol_rec = search_symbol(symbol_table_head, symbol_name);
 
   if (symbol_rec)
   {
-    node->nodetype = SYMBOL;
-    node->rec = symbol_rec;
   }
   else
   {
-    node->rec = create_symbol_rec(symbol_name, value);
-    node->nodetype = SYMBOL;
-    insert_to_symbol_table(node->rec);
+    // symbol_rec_table = create_symbol_rec(symbol_name, value);
+    // node->nodetype = SYMBOL;
+    // insert_to_symbol_table(node->rec);
   }
 
-  return (struct ast *)node;
+  // return (struct ast *)node;
 }
 
 struct ast *eval(struct ast *tree)
 {
-  if (tree == NULL)
+ if (tree == NULL)
     return NULL;
-
-  struct ast *left, *right;
-  if (tree->nodeType != D_BOOL && tree->nodeType != D_DOUBLE &&
-      tree->nodeType != D_INTEGER)
-  {
-    printf("Eval at left: %p\n", tree->left);
-    left = eval(tree->left);
-    if (tree->nodeType != S_ASSIGN)
-    {
-      printf("Eval at right: %p\n", tree->right);
-      right = eval(tree->right);
-    }
-  }
 
   switch (tree->nodeType)
   {
   case D_INTEGER:
   case D_DOUBLE:
   case D_STRING:
+    printf("Getting value at %p\n", tree);
     return tree;
 
   case E_ADD:
@@ -128,22 +110,43 @@ struct ast *eval(struct ast *tree)
   case E_GT:
   case E_EE:
   case E_NE:
+  {
+    struct ast *left = eval(tree->left),
+               *right = eval(tree->right);
     return op(tree->nodeType, left, right);
-
+  }
   case S_ASSIGN:
   {
+
+    struct ast *left = eval(tree->left),
+               *right = eval(tree->right);
     char *name = ((struct d_string *)left)->value;
-    struct symbol_table_rec *node = search_symbol(name);
-    if (!node)
+    printf("This is assignment of %s with %p\n", name, right);
+    return new_symbol(name, right);
+  }
+
+  case SYMBOL:
+  {
+
+    struct ast *left = eval(tree->left);
+    char *name = ((struct d_string *)left)->value;
+    struct symbol *rec = (struct symbol *)get_symbol(name);
+
+    printf("Getting symbol name %s at %p\n", name, left);
+    if (rec)
     {
-      node = create_symbol_rec(name, right);
-      insert_to_symbol_table(node);
+      //return rec->rec;make
     }
-    return get_symbol(name);
+    else
+    {
+      printf("Symbol Not Found\n");
+      return 0;
+    }
   }
 
   case S_ECHO:
   {
+    struct ast *left = eval(tree->left);
     printf("%s", stringify(left));
     return 0;
   }

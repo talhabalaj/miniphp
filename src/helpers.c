@@ -41,8 +41,9 @@ char *read_string()
 
 char *stringify(struct ast *tree)
 {
+  char* null = strdup(null_string);
   if (tree == NULL)
-    return null_string;
+    return null;
 
   switch (tree->nodeType)
   {
@@ -52,8 +53,10 @@ char *stringify(struct ast *tree)
     return float_to_string(((struct d_double *)tree)->value);
   case D_BOOL:
     return boolean_to_string(((struct d_integer *)tree)->value);
+  case D_STRING:
+    return ((struct d_string *)tree)->value;
   default:
-    return strdup(null_string);
+    return null;
   }
 }
 
