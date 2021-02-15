@@ -18,6 +18,5 @@ static struct symbol_table_rec *symbol_table_head;
 
 struct symbol_table_rec *create_symbol_rec(const char *name, struct ast *value);
 void insert_to_symbol_table(struct symbol_table_rec *new_node);
-
 struct symbol_table_rec *search_symbol(const char *name);
 #endif
