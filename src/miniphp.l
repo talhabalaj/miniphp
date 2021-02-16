@@ -5,8 +5,10 @@
 
   char* process_string(char* ); 
   char* remove_dollar_prefix_from_string(char* ); 
-  extern char* init_c_function_interop();
+  extern void init();
 
+  extern struct ast* pop_stack();
+  extern struct ast* eval(struct ast*);
   FILE* token_file = NULL;
   void write_token(const char*, const char*);
 %}
@@ -174,6 +176,6 @@ int main(int argc, const char* argv[]) {
 
   token_file = fopen("token.txt", "w");
 
-  init_c_function_interop();
+  init();
   yyparse();
 }

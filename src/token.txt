@@ -1,0 +1,1 @@
+<keyword, <?php><id, $id><op, =><integer, 5><op, ;><keyword, echo><id, $id><op, .><string, " <- $id"><op, ;><keyword, echo><string, "\n"><op, ;><keyword, if><op, (><id, $id><op, ==><integer, 5><op, )><op, {><keyword, echo><string, "YEH"><op, ;><keyword, echo><string, "\n \n"><op, ;><op, }><keyword, ?>>

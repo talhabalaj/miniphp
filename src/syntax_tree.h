@@ -24,10 +24,12 @@
 #define E_AND 21
 #define E_OR 22
 #define E_NOT 21
+#define OP_CONCAT 25
 #define S_ASSIGN 30
 #define S_ECHO 31
 #define F_IF_STATMENT 50
 #define F_WHILE_STATMENT 51
+#define F_STMTS 53
 #define SYMBOL 60
 
 static FILE *identifier_file;
@@ -51,7 +53,6 @@ struct symbol_table_rec {
 };
 
 struct symbol_table_rec *symbol_table_head = NULL;
-struct ast_stack *stack_head = NULL;
 
 struct d_integer {
   int nodetype;
@@ -80,6 +81,11 @@ struct flow {
   struct ast *if_false;
 };
 
+struct block {
+  int nodetype;
+  struct ast_stack *stmts;
+};
+
 static char true_string[5] = "true";
 static char null_string[5] = "null";
 static char false_string[6] = "false";
@@ -98,6 +104,7 @@ struct ast *new_bool(int value);
 struct ast *new_double(double value);
 struct ast *new_flow(int nodetype, struct ast *cond, struct ast *if_true,
                      struct ast *if_false);
+struct ast *new_stmt_list(struct ast_stack*);
 struct ast *get_symbol(const char *symbol_name);
 struct ast *new_symbol(const char *symbol_name, struct ast *value);
 struct ast *eval(struct ast *tree);
@@ -105,28 +112,31 @@ double perform_op(int optype, double a, double b);
 struct symbol_table_rec *create_symbol_rec(const char *name, struct ast *value);
 void insert_to_symbol_table(struct symbol_table_rec *new_node);
 struct symbol_table_rec *search_symbol(const char *name);
-struct ast_stack *insert_to_stack(struct ast *value);
-struct ast *pop_stack();
+struct ast_stack *insert_to_stack(struct ast_stack **, struct ast *value);
+struct ast *pop_stack(struct ast_stack **);
 
-struct ast_stack *insert_to_stack(struct ast *value) {
+struct ast_stack *insert_to_stack(struct ast_stack **stack_head, struct ast *value) {
   struct ast_stack *tmp = (struct ast_stack *)malloc(sizeof(struct ast_stack));
   tmp->data = value;
+  tmp->prev = NULL;
   if (!stack_head) {
-    stack_head = tmp;
+    stack_head = &tmp;
+  } else if (!*stack_head) {
+    *stack_head = tmp;
   } else {
-    struct ast_stack *z = stack_head;
-    stack_head = tmp;
-    stack_head->prev = z;
+    struct ast_stack *z = *stack_head;
+    *stack_head = tmp;
+    (*stack_head)->prev = z;
   }
-  return stack_head;
+  return *stack_head;
 }
 
-struct ast *pop_stack() {
-  if (!stack_head) {
+struct ast *pop_stack(struct ast_stack **stack_head) {
+  if (!stack_head || !*stack_head) {
     return 0;
   }
-  struct ast_stack *tmp = stack_head;
-  stack_head = stack_head->prev;
+  struct ast_stack *tmp = *stack_head;
+  *stack_head = (*stack_head)->prev;
   return tmp->data;
 }
 
@@ -136,6 +146,14 @@ struct ast *create_ast(int nodetype, struct ast *left, struct ast *right) {
   node->left = left;
   node->right = right;
   return node;
+}
+
+struct ast *new_stmt_list(struct ast_stack * val) {
+  if (!val) return 0;
+  struct block *node = (struct block *)malloc(sizeof(struct block));
+  node->nodetype = F_STMTS;
+  node->stmts = val;
+  return (struct ast*)node;
 }
 
 struct ast *new_integer(int value) {
@@ -214,7 +232,7 @@ struct ast *eval(struct ast *tree) {
   case D_DOUBLE:
   case D_STRING:
   case D_BOOL:
-    //printf("Getting value at %p\n", tree);
+    // printf("Getting value at %p\n", tree);
     return tree;
 
   case E_ADD:
@@ -234,18 +252,40 @@ struct ast *eval(struct ast *tree) {
   case S_ASSIGN: {
     struct ast *left = eval(tree->left), *right = eval(tree->right);
     char *name = ((struct d_string *)left)->value;
-    //printf("This is assignment of %s with %p\n", name, right);
+    // printf("This is assignment of %s with %p\n", name, right);
     return new_symbol(name, right);
   }
 
   case F_IF_STATMENT: {
-    //printf("Running if condition\n");
+    // printf("Running if condition\n");
     struct flow *f = (struct flow *)tree;
     struct d_bool *cond = (struct d_bool *)eval(f->condition);
     if (cond->value) {
       return eval(f->if_true);
     }
     return eval(f->if_false);
+  }
+
+  case OP_CONCAT: {
+
+    char *str1 = stringify(eval(tree->left));
+    char *str2 = stringify(eval(tree->right));
+    char *new_str = malloc(sizeof(char) * (strlen(str1) + strlen(str2) + 2));
+    strcat(new_str, str1);
+    strcat(new_str, str2);
+    struct ast *v = new_string(new_str);
+    free(new_str);
+    return v;
+  }
+
+  case F_STMTS: {
+    struct ast_stack *st = ((struct block*)tree)->stmts;
+    struct ast *tmp = pop_stack(&st);
+    while (tmp) {
+      eval(tmp);
+      tmp = pop_stack(&st);
+    };
+    return 0;
   }
 
   case SYMBOL: {

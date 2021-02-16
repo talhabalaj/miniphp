@@ -5,7 +5,7 @@
   #include <ctype.h>
   #include "syntax_tree.h"
 
-  void init_c_function_interop();
+  void init();
 
   int yylex();
   void yyerror(const char*);
@@ -45,16 +45,20 @@ GE EE NE
 
 %%
 Program : PHPSTART StmtList PHPEND { 
-        struct ast* tmp = pop_stack();
-                while (tmp) {
-                        eval(tmp);
-                        tmp = pop_stack();
-                };
+                eval($2);
          }
         | OTHER Program  { printf("%s", $1); }
         ;
-StmtList: Stmt StmtList { insert_to_stack($1); }
-        |
+StmtList: Stmt StmtList { 
+                struct ast* l = $2;
+                struct ast_stack *stmt_list = NULL;
+                if (l != NULL) {
+                        stmt_list = ((struct block*)l)->stmts;
+                }
+                insert_to_stack(&stmt_list, $1);
+                $$ = new_stmt_list(stmt_list);
+        }
+        |    { $$ = NULL; }
         ;
 Stmt    : IfS   { $$ = $1; }
         | AssignS ';' { $$ = $1; }
@@ -71,13 +75,7 @@ PrntAble: STRING { $$ = new_string($1); }
         }
         | Expr { $$ = $1; }
         | PrntAble '.' PrntAble {
-                char* str1 = stringify($1);
-                char* str2 = stringify($3);
-                char* new_str = malloc(sizeof(char)*(strlen(str1)+strlen(str2)+2));
-                strcat(new_str, str1);
-                strcat(new_str, str2);
-                $$ = new_string(new_str);
-                free(new_str);
+                $$ = create_ast(OP_CONCAT, $1, $3);
         }
         ;
 Block   : '{' StmtList '}' { $$ = $2 ; }
@@ -115,33 +113,6 @@ BoolExpr: Expr '<' Expr   { $$ = create_ast(E_LT, $1, $3); }
         | TRUE         {$$ = new_bool(1);}
         | FALSE        {$$ = new_bool(0);}
         ;
-/* StrExpr : IDENTIFIER {
-                struct ast* r = new_symbol($1);
-                if (r) {
-                        if (r->type == D_STRING) {
-                                $$ = new_string(((struct d_string)*r)->rec->data);
-                        } else if (r->type == D_DOUBLE) {
-                                $$ = float_to_string(r->data.floatVal);
-                        } else if (r->type == INT_VALUE) {
-                                $$ = int_to_string(r->data.intVal);
-                        } else if (r->type == BOOL_VALUE) {
-                                $$ = boolean_to_string(r->data.boolVal);
-                        }
-                } else {
-                        char null[5] = "null";
-                        $$ = new_string(null);
-                }
-        }
-        | Expr {
-                char str[20];
-                printf("%d %f \n", $1, $1);
-                if ($1 - (int)$1 == 0)
-                        sprintf(str, "%d", $1);
-                else
-                        sprintf(str, "%f", $1);
-                $$ = str;
-        }
-        ; */
 Expr    : Expr '+' Expr  { $$ = create_ast(E_ADD, $1, $3); }
         | Expr '-' Expr  { $$ = create_ast(E_SUB, $1, $3); }
         | Expr '*' Expr  { $$ = create_ast(E_MUL, $1, $3); }
@@ -176,7 +147,7 @@ void yyerror(const char* message) {
   fprintf(stderr, "Error: %s,", message);
 }
 
-void init_c_function_interop() {
+void init() {
   /* insert_to_symbol_table(&symbol_table_head, create("webserver", FUNCTION_VALUE, (void*)webserver));
   insert_to_symbol_table(&symbol_table_head, create("read", FUNCTION_VALUE, (void*)read_string));
   insert_to_symbol_table(&symbol_table_head, create("get_query_string", FUNCTION_VALUE, (void*)get_query_string )); */

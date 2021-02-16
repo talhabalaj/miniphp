@@ -1,7 +1,10 @@
 <?php
   $id  = 5;
-  echo $id;
-  if ($id != 5) echo "YEH";
-
+  echo $id . " <- $id";
+  echo "\n";
+  if ($id == 5) {
+    echo "YEH"; 
+    echo "\n \n";
+  }
   
 ?>
