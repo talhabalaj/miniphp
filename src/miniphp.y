@@ -3,7 +3,7 @@
   #include <string.h>
   #include <stdlib.h>
   #include <ctype.h>
-  #include "symbol_table.h"
+  #include "syntax_tree.h"
 
   void init_c_function_interop();
 
@@ -41,21 +41,21 @@ GE EE NE
 %left '(' ')'
 %left '!'
 
-%type<tree> Expr PrntAble FuncC BoolExpr AssignS Stmt
+%type<tree> Expr PrntAble FuncC BoolExpr AssignS Stmt IfS IfSCom Block StmtList
 
 %%
-Program : PHPSTART StmtList PHPEND
+Program : PHPSTART StmtList PHPEND {  }
         | OTHER Program  { printf("%s", $1); }
         ;
 StmtList: Stmt StmtList { eval($1); }
         |
         ;
-Stmt    : IfS
-        | AssignS ';'
-        | WhileS
-        | ForS
-        | Expr ';'
-        | FuncC ';'
+Stmt    : IfS   { $$ = $1; }
+        | AssignS ';' { $$ = $1; }
+        | WhileS 
+        | ForS 
+        | Expr ';' { $$ = $1; }
+        | FuncC ';' { $$ = $1; }
         | FuncS
         | ECHO_S PrntAble ';' { $$ = create_ast(S_ECHO, $2, NULL); }
         ;
@@ -65,8 +65,8 @@ PrntAble: STRING { $$ = new_string($1); }
         }
         | Expr { $$ = $1; }
         | PrntAble '.' PrntAble {
-                char* str1 = ((struct d_string*)$1)->value;
-                char* str2 = ((struct d_string*)$1)->value;
+                char* str1 = stringify($1);
+                char* str2 = stringify($3);
                 char* new_str = malloc(sizeof(char)*(strlen(str1)+strlen(str2)+2));
                 strcat(new_str, str1);
                 strcat(new_str, str2);
@@ -74,23 +74,24 @@ PrntAble: STRING { $$ = new_string($1); }
                 free(new_str);
         }
         ;
-Block   : '{' StmtList '}'
-        | Stmt ';'
+Block   : '{' StmtList '}' { $$ = $2 ; }
+        | Stmt ';' { $$ = $1; }
         ;
-AssignS : IDENTIFIER '=' Expr  { $$ = new_symbol($1, $3); }
-        | IDENTIFIER '=' BoolExpr  { $$ = new_symbol($1, $3); }
-        | IDENTIFIER '=' STRING { $$ = new_symbol($1, new_string($3)); } 
-        | IDENTIFIER '=' FuncC { $$ = new_symbol($1, $3); }
+AssignS : IDENTIFIER '=' Expr  { $$ = create_ast(S_ASSIGN, new_string($1), $3); }
+        | IDENTIFIER '=' BoolExpr  { $$ = create_ast(S_ASSIGN, new_string($1), $3); }
+        | IDENTIFIER '=' STRING { $$ = create_ast(S_ASSIGN, new_string($1), new_string($3)); } 
+        | IDENTIFIER '=' FuncC { $$ = create_ast(S_ASSIGN, new_string($1), $3);}
         ;
 FuncS   : FUNCTION IDENTIFIER_NAME '(' Id_seq ')' Block
         ;
-IfS     : IfSCom ElseS
+IfS     : IfSCom ElseS  { $$ = $1; }
         ;
 ElseS   : ELSE Block
         | ELSEIF '(' BoolExpr ')' Block ElseS
         |
         ;
-IfSCom  : IF '(' BoolExpr ')' Block ;
+IfSCom  : IF '(' BoolExpr ')' Block { printf("IF\n");$$ = new_flow(F_IF_STATMENT, $3, $5, NULL); } 
+        ; 
 WhileS  : WHILE '(' BoolExpr ')' Block
         ;
 ForS    : FOR '(' Expr ';' BoolExpr ';' Expr ')' Block
@@ -144,12 +145,7 @@ Expr    : Expr '+' Expr  { $$ = create_ast(E_ADD, $1, $3); }
         /* | '+' Expr       { $$ = $2; }
         | '-' Expr       { $$ = -1 * $2;} */
         | IDENTIFIER     { 
-                struct ast* r = get_symbol($1);
-                if (r) $$ = r;
-                else {
-                        yyerror("Symbol not found");
-                        yyerrok;
-                }
+                $$ = create_ast(SYMBOL, new_string($1), NULL);
         }
         | FLOAT    { $$ = new_double($1); }
         | INTEGER  { $$ = new_integer($1); }

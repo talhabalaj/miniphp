@@ -155,7 +155,7 @@ int main(int argc, const char* argv[]) {
   if (argc >= 2) {
     yyin = fopen(argv[1], "r");
     if (!yyin) {
-      fprintf(stderr, "error: %s: no such file");
+      fprintf(stderr, "error: %s: no such file", argv[2]);
       exit(-1); 
     }
   } else {

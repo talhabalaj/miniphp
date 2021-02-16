@@ -1,4 +1,6 @@
 <?php
-  echo $id;
-  $id = 5;
+  if (false) {
+    echo "TEST IS TSET" . 4 . true . "TEST";
+  }
+  
 ?>

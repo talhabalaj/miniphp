@@ -1,19 +1,19 @@
-CXX = gcc
+CC = clang
 CFLAGS = -g 
 LBLIBS = -lm
 
-SRC = symbol_table.c helpers.c ast.c miniphp.tab.c lex.yy.c  
+SRC = miniphp.tab.c lex.yy.c  
 OBJ = $(SRC:.c=.o)
 EXEC = miniphp
 
 all: ly $(EXEC)
 
 ly: 
-	@flex miniphp.l 2> /dev/null
-	@bison -d miniphp.y 2> /dev/null
+	flex miniphp.l
+	bison -d miniphp.y
 
 $(EXEC): $(OBJ)
-	gcc -ggdb -o $@ $(OBJ) $(LBLIBS)
+	$(CC) $(CFLAGS) -o $@ $(OBJ) $(LBLIBS)
 
 clean:
 	rm -rf $(OBJ) $(EXEC)
