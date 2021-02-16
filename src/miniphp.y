@@ -44,10 +44,16 @@ GE EE NE
 %type<tree> Expr PrntAble FuncC BoolExpr AssignS Stmt IfS IfSCom Block StmtList
 
 %%
-Program : PHPSTART StmtList PHPEND {  }
+Program : PHPSTART StmtList PHPEND { 
+        struct ast* tmp = pop_stack();
+                while (tmp) {
+                        eval(tmp);
+                        tmp = pop_stack();
+                };
+         }
         | OTHER Program  { printf("%s", $1); }
         ;
-StmtList: Stmt StmtList { eval($1); }
+StmtList: Stmt StmtList { insert_to_stack($1); }
         |
         ;
 Stmt    : IfS   { $$ = $1; }
@@ -75,7 +81,7 @@ PrntAble: STRING { $$ = new_string($1); }
         }
         ;
 Block   : '{' StmtList '}' { $$ = $2 ; }
-        | Stmt ';' { $$ = $1; }
+        | Stmt { $$ = $1; }
         ;
 AssignS : IDENTIFIER '=' Expr  { $$ = create_ast(S_ASSIGN, new_string($1), $3); }
         | IDENTIFIER '=' BoolExpr  { $$ = create_ast(S_ASSIGN, new_string($1), $3); }
@@ -90,7 +96,7 @@ ElseS   : ELSE Block
         | ELSEIF '(' BoolExpr ')' Block ElseS
         |
         ;
-IfSCom  : IF '(' BoolExpr ')' Block { printf("IF\n");$$ = new_flow(F_IF_STATMENT, $3, $5, NULL); } 
+IfSCom  : IF '(' BoolExpr ')' Block { $$ = new_flow(F_IF_STATMENT, $3, $5, NULL); } 
         ; 
 WhileS  : WHILE '(' BoolExpr ')' Block
         ;

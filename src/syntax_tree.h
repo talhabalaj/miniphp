@@ -38,6 +38,11 @@ struct ast {
   struct ast *right;
 };
 
+struct ast_stack {
+  struct ast_stack *prev;
+  struct ast *data;
+};
+
 struct symbol_table_rec {
   const char *name;
   int type;
@@ -46,6 +51,7 @@ struct symbol_table_rec {
 };
 
 struct symbol_table_rec *symbol_table_head = NULL;
+struct ast_stack *stack_head = NULL;
 
 struct d_integer {
   int nodetype;
@@ -99,6 +105,30 @@ double perform_op(int optype, double a, double b);
 struct symbol_table_rec *create_symbol_rec(const char *name, struct ast *value);
 void insert_to_symbol_table(struct symbol_table_rec *new_node);
 struct symbol_table_rec *search_symbol(const char *name);
+struct ast_stack *insert_to_stack(struct ast *value);
+struct ast *pop_stack();
+
+struct ast_stack *insert_to_stack(struct ast *value) {
+  struct ast_stack *tmp = (struct ast_stack *)malloc(sizeof(struct ast_stack));
+  tmp->data = value;
+  if (!stack_head) {
+    stack_head = tmp;
+  } else {
+    struct ast_stack *z = stack_head;
+    stack_head = tmp;
+    stack_head->prev = z;
+  }
+  return stack_head;
+}
+
+struct ast *pop_stack() {
+  if (!stack_head) {
+    return 0;
+  }
+  struct ast_stack *tmp = stack_head;
+  stack_head = stack_head->prev;
+  return tmp->data;
+}
 
 struct ast *create_ast(int nodetype, struct ast *left, struct ast *right) {
   struct ast *node = (struct ast *)malloc(sizeof(struct ast));
@@ -143,36 +173,37 @@ struct ast *new_double(double value) {
 struct ast *new_flow(int nodetype, struct ast *cond, struct ast *if_true,
                      struct ast *if_false) {
   struct flow *node = (struct flow *)malloc(sizeof(struct flow));
+  node->nodetype = nodetype;
   node->condition = cond;
   node->if_false = if_false;
   node->if_true = if_true;
   return (struct ast *)node;
 }
 
-// struct ast *get_symbol(const char *symbol_name) {
-//   struct symbol_table_rec *r = search_symbol(symbol_name);
+struct ast *get_symbol(const char *symbol_name) {
+  struct symbol_table_rec *r = search_symbol(symbol_name);
 
-//   if (r) {
-//     return (struct ast *)r->data;
-//   }
+  if (r) {
+    return (struct ast *)r->data;
+  }
 
-//   return 0;
-// }
+  return 0;
+}
 
-// struct ast *new_symbol(const char *symbol_name, struct ast *value) {
-//   struct symbol_rec_table *symbol_rec = search_symbol(symbol_name);
+struct ast *new_symbol(const char *symbol_name, struct ast *value) {
+  struct symbol_table_rec *symbol_rec = search_symbol(symbol_name);
 
-//   if (symbol_rec) {
-//     symbol_rec->type = value->nodeType;
-//     symbol_rec->data = value;
-//   } else {
-//     symbol_rec = create_symbol_rec(symbol_name, value);
-//     symbol_rec->type = value->nodeType;
-//     insert_to_symbol_table(symbol_rec);
-//   }
+  if (symbol_rec) {
+    symbol_rec->type = value->nodeType;
+    symbol_rec->data = value;
+  } else {
+    symbol_rec = create_symbol_rec(symbol_name, value);
+    symbol_rec->type = value->nodeType;
+    insert_to_symbol_table(symbol_rec);
+  }
 
-//   return (struct ast *)symbol_rec;
-// }
+  return (struct ast *)symbol_rec;
+}
 
 struct ast *eval(struct ast *tree) {
   if (tree == NULL)
@@ -183,7 +214,7 @@ struct ast *eval(struct ast *tree) {
   case D_DOUBLE:
   case D_STRING:
   case D_BOOL:
-    printf("Getting value at %p\n", tree);
+    //printf("Getting value at %p\n", tree);
     return tree;
 
   case E_ADD:
@@ -203,11 +234,12 @@ struct ast *eval(struct ast *tree) {
   case S_ASSIGN: {
     struct ast *left = eval(tree->left), *right = eval(tree->right);
     char *name = ((struct d_string *)left)->value;
-    printf("This is assignment of %s with %p\n", name, right);
-    //    return new_symbol(name, right);
+    //printf("This is assignment of %s with %p\n", name, right);
+    return new_symbol(name, right);
   }
 
   case F_IF_STATMENT: {
+    //printf("Running if condition\n");
     struct flow *f = (struct flow *)tree;
     struct d_bool *cond = (struct d_bool *)eval(f->condition);
     if (cond->value) {
@@ -218,17 +250,17 @@ struct ast *eval(struct ast *tree) {
 
   case SYMBOL: {
 
-    // struct ast *left = eval(tree->left);
-    // char *name = ((struct d_string *)left)->value;
-    // struct symbol *rec = (struct symbol *)get_symbol(name);
+    struct ast *left = eval(tree->left);
+    char *name = ((struct d_string *)left)->value;
+    struct ast *rec = get_symbol(name);
 
     // printf("Getting symbol name %s at %p\n", name, left);
-    // if (rec) {
-    //   // return rec->rec;make
-    // } else {
-    //   printf("Symbol Not Found\n");
-    //   return 0;
-    // }
+    if (rec) {
+      return rec;
+    } else {
+      printf("Symbol Not Found\n");
+      return 0;
+    }
   }
 
   case S_ECHO: {

@@ -2,12 +2,16 @@
   #include <stdlib.h>
   #include "miniphp.tab.h"
   #include <string.h>
-  int line_no = 0;
 
   char* process_string(char* ); 
   char* remove_dollar_prefix_from_string(char* ); 
   extern char* init_c_function_interop();
+
+  FILE* token_file = NULL;
+  void write_token(const char*, const char*);
 %}
+
+%option yylineno
 
 digit [0-9]
 digit_s {digit}+
@@ -23,91 +27,91 @@ single_line_comment (\/\/|"#"){input_chars}*\n
 del [\n\t\r ] 
 
 %%
-\n    {line_no++;}
+\n   
 {del}
-{single_line_comment}
-"/*"(.|\n)*"*/"	
-"<?php"   return PHPSTART;
-"?>"      return PHPEND;
-"abstract" return ABSTRACT;
-"array" return ARRAY;
-"as" return AS;
-"break" return BREAK;
-"callable" return CALLABLE;
-"case" return CASE;
-"catch" return CATCH;
-"class" return CLASS;
-"clone" return CLONE;
-"const" return CONST;
-"continue" return CONTINUE;
-"declare" return DECLARE;
-"default" return DEFAULT;
-"die" return DIE;
-"do" return DO;
-"echo" return ECHO_S;
-"else" return ELSE;
-"elseif" return ELSEIF;
-"empty" return EMPTY;
-"enddeclare" return ENDDECLARE;
-"endfor" return ENDFOR;
-"endforeach" return ENDFOREACH;
-"endif" return ENDIF;
-"endswitch" return ENDSWITCH;
-"endwhile" return ENDWHILE;
-"eval" return EVAL;
-"exit" return EXIT;
-"extends" return EXTENDS;
-"final" return FINAL;
-"finally" return FINALLY;
-"for" return FOR;
-"foreach" return FOREACH;
-"function" return FUNCTION;
-"global" return GLOBAL;
-"goto" return GOTO;
-"if" return IF;
-"implements" return IMPLEMENTS;
-"include" return INCLUDE;
-"include_once" return INCLUDE_ONCE;
-"instanceof" return INSTANCEOF;
-"insteadof" return INSTEADOF;
-"interface" return INTERFACE;
-"isset" return ISSET;
-"list" return LIST;
-"namespace" return NAMESPACE;
-"new" return NEW;
-"print" return PRINT;
-"private" return PRIVATE;
-"protected" return PROTECTED;
-"public" return PUBLIC;
-"require" return REQUIRE;
-"require_once" return REQUIRE_ONCE;
-"return" return RETURN;
-"static" return STATIC;
-"switch" return SWITCH;
-"throw" return THROW;
-"trait" return TRAIT;
-"try" return TRY;
-"unset" return UNSET;
-"use" return USE;
-"var" return VAR;
-"while" return WHILE;
-"xor" return XOR;
-"true"  {yylval.boolean = 1; return TRUE;}
-"false" {yylval.boolean = 0; return FALSE;}
-{integer}  {yylval.itype = atoi(yytext); return INTEGER;}
-{float}    {yylval.dtype = atof(yytext); return FLOAT;}
-({double_quote_string}|{single_quote_string}) {yylval.string = process_string(yytext); return STRING;}
-"$".{identifier_name} {yylval.string = remove_dollar_prefix_from_string(yytext); return IDENTIFIER;}
-{identifier_name}     {yylval.string = strdup(yytext); return IDENTIFIER_NAME;}
-"["|"]"|"("|")"|"{"|"}"|"."|"*"|"+"|"-"|"~"|"!"|"$"|"/"|"%"|"^"|"&"|"?"|":"|";"|"="|","|"<"|">" return yytext[0];
-"<=" return LE;
-">=" return GE;
-"==" return EE;
-"!=" return NE;
-"&&" return AND;
-"||" return OR;
+{single_line_comment} { write_token("comment", yytext); }
+"/*"(.|\n)*"*/"	      { write_token("comment", yytext); }
+"<?php"  { write_token("keyword", yytext); return PHPSTART;}
+"?>"      { write_token("keyword", yytext); return PHPEND; }
+"abstract" { write_token("keyword", yytext); return ABSTRACT; }
+"array" { write_token("keyword", yytext); return ARRAY; }
+"as" { write_token("keyword", yytext); return AS; }
+"break" { write_token("keyword", yytext); return BREAK; }
+"callable" { write_token("keyword", yytext); return CALLABLE; }
+"case" { write_token("keyword", yytext); return CASE; }
+"catch" { write_token("keyword", yytext); return CATCH; }
+"class" { write_token("keyword", yytext); return CLASS; }
+"clone" { write_token("keyword", yytext); return CLONE; }
+"const" { write_token("keyword", yytext); return CONST; }
+"continue" { write_token("keyword", yytext); return CONTINUE; }
+"declare" { write_token("keyword", yytext); return DECLARE; }
+"default" { write_token("keyword", yytext); return DEFAULT; }
+"die" { write_token("keyword", yytext); return DIE; }
+"do" { write_token("keyword", yytext); return DO; }
+"echo" { write_token("keyword", yytext); return ECHO_S; }
+"else" { write_token("keyword", yytext); return ELSE; }
+"elseif" { write_token("keyword", yytext); return ELSEIF; }
+"empty" { write_token("keyword", yytext); return EMPTY; }
+"enddeclare" { write_token("keyword", yytext); return ENDDECLARE; }
+"endfor" { write_token("keyword", yytext); return ENDFOR; }
+"endforeach" { write_token("keyword", yytext); return ENDFOREACH; }
+"endif" { write_token("keyword", yytext); return ENDIF; }
+"endswitch" { write_token("keyword", yytext); return ENDSWITCH; }
+"endwhile" { write_token("keyword", yytext); return ENDWHILE; }
+"eval" { write_token("keyword", yytext); return EVAL; }
+"exit" { write_token("keyword", yytext); return EXIT; }
+"extends" { write_token("keyword", yytext); return EXTENDS; }
+"final" { write_token("keyword", yytext); return FINAL; }
+"finally" { write_token("keyword", yytext); return FINALLY; }
+"for" { write_token("keyword", yytext); return FOR; }
+"foreach" { write_token("keyword", yytext); return FOREACH; }
+"function" { write_token("keyword", yytext); return FUNCTION; }
+"global" { write_token("keyword", yytext); return GLOBAL; }
+"goto" { write_token("keyword", yytext); return GOTO; }
+"if" { write_token("keyword", yytext); return IF; }
+"implements" { write_token("keyword", yytext); return IMPLEMENTS; }
+"include" { write_token("keyword", yytext); return INCLUDE; }
+"include_once" { write_token("keyword", yytext); return INCLUDE_ONCE; }
+"instanceof" { write_token("keyword", yytext); return INSTANCEOF; }
+"insteadof" { write_token("keyword", yytext); return INSTEADOF; }
+"interface" { write_token("keyword", yytext); return INTERFACE; }
+"isset" { write_token("keyword", yytext); return ISSET; }
+"list" { write_token("keyword", yytext); return LIST; }
+"namespace" { write_token("keyword", yytext); return NAMESPACE; }
+"new" { write_token("keyword", yytext); return NEW; }
+"print" { write_token("keyword", yytext); return PRINT; }
+"private" { write_token("keyword", yytext); return PRIVATE; }
+"protected" { write_token("keyword", yytext); return PROTECTED; }
+"public" { write_token("keyword", yytext); return PUBLIC; }
+"require" { write_token("keyword", yytext); return REQUIRE; }
+"require_once" { write_token("keyword", yytext); return REQUIRE_ONCE; }
+"return" { write_token("keyword", yytext); return RETURN; }
+"static" { write_token("keyword", yytext); return STATIC; }
+"switch" { write_token("keyword", yytext); return SWITCH; }
+"throw" { write_token("keyword", yytext); return THROW; }
+"trait" { write_token("keyword", yytext); return TRAIT; }
+"try" { write_token("keyword", yytext); return TRY; }
+"unset" { write_token("keyword", yytext); return UNSET; }
+"use" { write_token("keyword", yytext); return USE; }
+"var" { write_token("keyword", yytext); return VAR; }
+"while" { write_token("keyword", yytext); return WHILE; }
+"xor" { write_token("keyword", yytext); return XOR; }
+"true"  {yylval.boolean = 1; write_token("bool", yytext); return TRUE;}
+"false" {yylval.boolean = 0; write_token("bool", yytext); return FALSE;}
+{integer}  {yylval.itype = atoi(yytext); write_token("integer", yytext); return INTEGER;}
+{float}    {yylval.dtype = atof(yytext); write_token("float", yytext); return FLOAT;}
+({double_quote_string}|{single_quote_string}) {yylval.string = process_string(yytext); write_token("string", yytext); return STRING;}
+"$".{identifier_name} {yylval.string = remove_dollar_prefix_from_string(yytext); write_token("id", yytext); return IDENTIFIER;}
+{identifier_name}     {yylval.string = strdup(yytext); write_token("fnc", yytext); return IDENTIFIER_NAME;}
+"["|"]"|"("|")"|"{"|"}"|"."|"*"|"+"|"-"|"~"|"!"|"$"|"/"|"%"|"^"|"&"|"?"|":"|";"|"="|","|"<"|">" write_token("op", yytext); return yytext[0];
+"<=" { write_token("op", yytext); return LE; }
+">=" { write_token("op", yytext); return GE; }
+"==" { write_token("op", yytext); return EE; }
+"!=" { write_token("op", yytext); return NE; }
+"&&" { write_token("op", yytext); return AND; }
+"||" { write_token("op", yytext); return OR; }
 . {
-  fprintf(stderr, "Error: %s token is not valid", yytext);
+  fprintf(stderr, "Error: %s token is not valid at %d", yytext, yylineno);
   exit(2);
 }
 %%
@@ -118,6 +122,10 @@ char* remove_dollar_prefix_from_string(char* str) {
   ++new_str;
   return new_str;
 }
+
+void write_token(const char* name, const char* value) {
+  fprintf(token_file, "<%s, %s>", name, value);
+}   
 
 char* process_string(char* str) {
   char* new_str = strdup(str);
@@ -163,6 +171,8 @@ int main(int argc, const char* argv[]) {
     yyin = fopen("input.txt", "r");
     if (!yyin) yyin = tmp;
   }
+
+  token_file = fopen("token.txt", "w");
 
   init_c_function_interop();
   yyparse();

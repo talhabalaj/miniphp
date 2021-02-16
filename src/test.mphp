@@ -1,6 +1,7 @@
 <?php
-  if (false) {
-    echo "TEST IS TSET" . 4 . true . "TEST";
-  }
+  $id  = 5;
+  echo $id;
+  if ($id != 5) echo "YEH";
+
   
 ?>
