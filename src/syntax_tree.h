@@ -23,7 +23,7 @@
 #define E_NE 20
 #define E_AND 21
 #define E_OR 22
-#define E_NOT 21
+#define E_NOT 23
 #define OP_CONCAT 25
 #define S_ASSIGN 30
 #define S_ECHO 31
@@ -249,6 +249,24 @@ struct ast *eval(struct ast *tree) {
     struct ast *left = eval(tree->left), *right = eval(tree->right);
     return op(tree->nodeType, left, right);
   }
+
+  case E_AND: {
+    struct ast *left = eval(tree->left), *right = eval(tree->right);
+    return new_bool(((struct d_bool *)left)->value && ((struct d_bool *)right)->value);
+  }
+
+  case E_OR: {
+    struct ast *left = eval(tree->left), *right = eval(tree->right);
+    return new_bool(((struct d_bool *)left)->value ||
+                    ((struct d_bool *)right)->value);
+  }
+
+
+  case E_NOT: {
+     struct ast *left = eval(tree->left);
+     return new_bool(!((struct d_bool *)left)->value);
+  }
+
   case S_ASSIGN: {
     struct ast *left = eval(tree->left), *right = eval(tree->right);
     char *name = ((struct d_string *)left)->value;
@@ -264,6 +282,15 @@ struct ast *eval(struct ast *tree) {
       return eval(f->if_true);
     }
     return eval(f->if_false);
+  }
+
+  case F_WHILE_STATMENT: {
+    // printf("Running if condition\n");
+    struct flow *f = (struct flow *)tree;
+    while (((struct d_bool *)eval(f->condition))->value) {
+      eval(f->if_true);
+    }
+    return 0;
   }
 
   case OP_CONCAT: {
@@ -312,6 +339,7 @@ struct ast *eval(struct ast *tree) {
   default:
     break;
   }
+  printf("unknown op\n");
 }
 
 struct ast *op(int optype, struct ast *a, struct ast *b) {
@@ -385,10 +413,6 @@ double perform_op(int optype, double a, double b) {
     return a == b;
   case E_NE:
     return a != b;
-  case E_AND:
-    return a && b;
-  case E_OR:
-    return a || b;
   }
 }
 struct symbol_table_rec *create_symbol_rec(const char *name,

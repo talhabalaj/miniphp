@@ -13,7 +13,7 @@
   void write_token(const char*, const char*);
 %}
 
-%option yylineno
+%option yylineno case-insensitive
 
 digit [0-9]
 digit_s {digit}+
@@ -103,9 +103,9 @@ del [\n\t\r ]
 {integer}  {yylval.itype = atoi(yytext); write_token("integer", yytext); return INTEGER;}
 {float}    {yylval.dtype = atof(yytext); write_token("float", yytext); return FLOAT;}
 ({double_quote_string}|{single_quote_string}) {yylval.string = process_string(yytext); write_token("string", yytext); return STRING;}
-"$".{identifier_name} {yylval.string = remove_dollar_prefix_from_string(yytext); write_token("id", yytext); return IDENTIFIER;}
+"$"{identifier_name} {yylval.string = remove_dollar_prefix_from_string(yytext); write_token("id", yytext); return IDENTIFIER;}
 {identifier_name}     {yylval.string = strdup(yytext); write_token("fnc", yytext); return IDENTIFIER_NAME;}
-"["|"]"|"("|")"|"{"|"}"|"."|"*"|"+"|"-"|"~"|"!"|"$"|"/"|"%"|"^"|"&"|"?"|":"|";"|"="|","|"<"|">" write_token("op", yytext); return yytext[0];
+"["|"]"|"("|")"|"{"|"}"|"."|"*"|"+"|"-"|"~"|"!"|"$"|"/"|"%"|"^"|"&"|"?"|":"|";"|"="|","|"<"|">"  {write_token("op", yytext); return yytext[0];}
 "<=" { write_token("op", yytext); return LE; }
 ">=" { write_token("op", yytext); return GE; }
 "==" { write_token("op", yytext); return EE; }

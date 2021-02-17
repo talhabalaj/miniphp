@@ -1,10 +1,19 @@
 <?php
-  $id  = 5;
-  echo $id . " <- $id";
-  echo "\n";
-  if ($id == 5) {
-    echo "YEH"; 
-    echo "\n \n";
+  $n1 = 0;
+  $n2 = 1;
+  $NEXT_TERM = 0;
+  $till = 5;
+  $i = 3;
+  ECHO $n1 . "\n" . $n2 . "\n";
+
+
+  while ($i <= $till) {
+    $next_term = $n1 + $n2;
+    $n1 = $n2;
+    $n2 = $next_term;
+
+    echo $next_term . "\n";
+    $i = $i + 1;
   }
-  
+
 ?>

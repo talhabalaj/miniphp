@@ -6,12 +6,13 @@
   #include "syntax_tree.h"
 
   void init();
-
+  extern int yylineno;
+  int errors;
   int yylex();
   void yyerror(const char*);
 %}
 
-%define parse.trace
+%locations
 
 %union {
   long double dtype;
@@ -20,6 +21,8 @@
   char* string;
   struct ast* tree;
 }
+
+
 
 %token <string> STRING
 %token <string> IDENTIFIER
@@ -33,19 +36,20 @@ GE EE NE
 
 %left '.'
 %right ';'
-%left AND OR
 %left '<' '>' '=' NE LE GE
+%left AND OR
 %left '+' '-'
 %left '*' '/'
 %left '%'
 %left '(' ')'
 %left '!'
 
-%type<tree> Expr PrntAble FuncC BoolExpr AssignS Stmt IfS IfSCom Block StmtList
+%type<tree> Expr PrntAble FuncC BoolExpr AssignS Stmt IfS Block StmtList ElseS WhileS
 
 %%
 Program : PHPSTART StmtList PHPEND { 
-                eval($2);
+                if (!errors)
+                        eval($2);
          }
         | OTHER Program  { printf("%s", $1); }
         ;
@@ -62,12 +66,13 @@ StmtList: Stmt StmtList {
         ;
 Stmt    : IfS   { $$ = $1; }
         | AssignS ';' { $$ = $1; }
-        | WhileS 
-        | ForS 
+        | WhileS  { $$ = $1; }
+        | ForS
         | Expr ';' { $$ = $1; }
         | FuncC ';' { $$ = $1; }
         | FuncS
         | ECHO_S PrntAble ';' { $$ = create_ast(S_ECHO, $2, NULL); }
+        | error ';' { yyerrok; }
         ;
 PrntAble: STRING { $$ = new_string($1); }
         | BoolExpr {
@@ -88,24 +93,22 @@ AssignS : IDENTIFIER '=' Expr  { $$ = create_ast(S_ASSIGN, new_string($1), $3); 
         ;
 FuncS   : FUNCTION IDENTIFIER_NAME '(' Id_seq ')' Block
         ;
-IfS     : IfSCom ElseS  { $$ = $1; }
+IfS     : IF '(' BoolExpr ')' Block ElseS  { $$ = new_flow(F_IF_STATMENT, $3, $5, $6); }
         ;
-ElseS   : ELSE Block
-        | ELSEIF '(' BoolExpr ')' Block ElseS
-        |
-        ;
-IfSCom  : IF '(' BoolExpr ')' Block { $$ = new_flow(F_IF_STATMENT, $3, $5, NULL); } 
+ElseS   : ELSEIF '(' BoolExpr ')' Block ElseS { $$ = new_flow(F_IF_STATMENT, $3, $5, $6); } 
+        | ELSE Block { $$ = $2; }
+        | { $$ = NULL; }
         ; 
-WhileS  : WHILE '(' BoolExpr ')' Block
+WhileS  : WHILE '(' BoolExpr ')' Block  { $$ = new_flow(F_WHILE_STATMENT, $3, $5, NULL); }
         ;
-ForS    : FOR '(' Expr ';' BoolExpr ';' Expr ')' Block
+ForS    : FOR '(' Expr ';' BoolExpr ';' Expr ')' 
         ;
 BoolExpr: Expr '<' Expr   { $$ = create_ast(E_LT, $1, $3); }
         | Expr '>' Expr   { $$ = create_ast(E_GT, $1, $3); }
         | Expr LE Expr    { $$ = create_ast(E_LE, $1, $3); }
         | Expr GE Expr    { $$ = create_ast(E_GE, $1, $3); }
         | Expr EE Expr    { $$ = create_ast(E_EE, $1, $3); }
-        | '!' BoolExpr    { $$ = create_ast(E_NOT, NULL, $2); }
+        | '!' BoolExpr    { $$ = create_ast(E_NOT, $2, NULL); }
         | Expr NE Expr    { $$ = create_ast(E_NE, $1, $3); }
         | '(' BoolExpr ')' { $$ = $2; }
         | BoolExpr AND BoolExpr { $$ = create_ast(E_AND, $1, $3); }
@@ -144,7 +147,9 @@ Id_seq  : IDENTIFIER ',' Id_seq
 
 
 void yyerror(const char* message) {
-  fprintf(stderr, "Error: %s,", message);
+  errors++;
+  printf("%d %d %d %d\n", yylloc.first_line, yylloc.first_column, yylloc.last_line, yylloc.last_column);
+  fprintf(stderr, "Error: %s at %d.\n", message, yylineno);
 }
 
 void init() {
